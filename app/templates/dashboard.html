@@ -1,0 +1,898 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Cloud Security Monitoring Dashboard</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 25px;
+            background: #101827;
+            color: #e5e7eb;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            color: #38bdf8;
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #cbd5e1;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+        }
+
+        .logout {
+            background: #dc2626;
+            color: white;
+            padding: 10px 18px;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 18px;
+            margin-bottom: 35px;
+        }
+
+        .card, .panel {
+            background: #1e293b;
+            padding: 22px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .card h3 {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 0;
+        }
+
+        .number {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .high {
+            color: #f87171;
+        }
+
+        .medium {
+            color: #fbbf24;
+        }
+
+        .low {
+            color: #4ade80;
+        }
+
+        .panel {
+            margin-bottom: 25px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: 13px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+            font-size: 14px;
+        }
+
+        th {
+            color: #94a3b8;
+        }
+
+        .empty {
+            color: #94a3b8;
+            padding: 20px 0;
+        }
+
+        #update-status {
+            color: #4ade80;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .incident-card {
+            background: #111c2e;
+            border: 1px solid #334155;
+            border-radius: 9px;
+            padding: 18px;
+            margin-top: 18px;
+        }
+
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .incident-header h3 {
+            margin: 0;
+        }
+
+        .incident-meta {
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.8;
+            margin: 12px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #334155;
+        }
+
+        .status-open {
+            color: #f87171;
+        }
+
+        .status-investigating {
+            color: #fbbf24;
+        }
+
+        .status-resolved {
+            color: #4ade80;
+        }
+
+        .incident-actions {
+            border-top: 1px solid #334155;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .incident-actions h4 {
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0 10px;
+            border: 1px solid #475569;
+            border-radius: 5px;
+            background: #0f172a;
+            color: #e5e7eb;
+            font-family: Arial, sans-serif;
+        }
+
+        textarea {
+            min-height: 70px;
+            resize: vertical;
+        }
+
+        button {
+            background: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            margin: 3px;
+        }
+
+        button:hover {
+            background: #0369a1;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .resolve-button {
+            background: #15803d;
+        }
+
+        .resolve-button:hover {
+            background: #166534;
+        }
+
+        .record-list {
+            color: #cbd5e1;
+            font-size: 13px;
+            line-height: 1.7;
+            padding-left: 20px;
+            overflow-wrap: anywhere;
+        }
+
+        .resolution-box {
+            border-left: 3px solid #4ade80;
+            padding: 10px;
+            background: #172b2b;
+            margin-top: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        .form-message {
+            font-size: 13px;
+            color: #4ade80;
+            margin: 5px 0;
+        }
+
+        footer {
+            color: #64748b;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .card, .panel {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <header>
+        <div>
+            <h1>Cloud Security Monitoring</h1>
+            <div class="subtitle">
+                Welcome, {{ username }} | Administrator Dashboard
+            </div>
+        </div>
+
+        <a class="logout" href="/logout">Logout</a>
+    </header>
+
+    <div id="update-status">Live monitoring starting...</div>
+
+    <!-- Dashboard Statistics -->
+    <section class="cards">
+
+        <div class="card">
+            <h3>Total Security Events</h3>
+            <div class="number" id="total-events">{{ total_events }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Total Security Alerts</h3>
+            <div class="number" id="total-alerts">{{ total_alerts }}</div>
+        </div>
+
+        <div class="card">
+            <h3>High Severity</h3>
+            <div class="number high" id="high-alerts">{{ high_alerts }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Medium Severity</h3>
+            <div class="number medium" id="medium-alerts">{{ medium_alerts }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Low Severity</h3>
+            <div class="number low" id="low-alerts">{{ low_alerts }}</div>
+        </div>
+
+    </section>
+
+    <!-- Recent Login Events -->
+    <section class="panel">
+        <h2>Recent Login Events</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Result</th>
+                    <th>Source IP</th>
+                    <th>Received At</th>
+                </tr>
+            </thead>
+
+            <tbody id="events-table">
+                {% for event in recent_events %}
+                <tr>
+                    <td>{{ event.username }}</td>
+                    <td>{{ event.result }}</td>
+                    <td>{{ event.source_ip }}</td>
+                    <td>{{ event.received_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Recent Security Alerts -->
+    <section class="panel">
+        <h2>Recent Security Alerts</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Alert Type</th>
+                    <th>Username</th>
+                    <th>Severity</th>
+                    <th>Failed Attempts</th>
+                    <th>Detected At</th>
+                </tr>
+            </thead>
+
+            <tbody id="alerts-table">
+                {% for alert in recent_alerts %}
+                <tr>
+                    <td>{{ alert.alert_type }}</td>
+                    <td>{{ alert.username }}</td>
+                    <td class="{{ alert.severity }}">
+                        {{ alert.severity | upper }}
+                    </td>
+                    <td>{{ alert.failed_attempts }}</td>
+                    <td>{{ alert.detected_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Incident Management -->
+    <section class="panel">
+        <h2>Incident Management</h2>
+
+        <p class="subtitle">
+            Track, investigate and resolve security incidents.
+        </p>
+
+        <div id="incident-status" class="empty">
+            Loading incidents...
+        </div>
+
+        <div id="incidents-container"></div>
+    </section>
+
+    <footer>
+        Cloud Security Fundamentals - Chapter 7 Monitoring Lab
+    </footer>
+
+</div>
+
+<script>
+    function addCell(row, value) {
+        const cell = document.createElement("td");
+        cell.textContent = value ?? "-";
+        row.appendChild(cell);
+    }
+
+    function updateEvents(events) {
+        const table = document.getElementById("events-table");
+        table.replaceChildren();
+
+        if (!events || events.length === 0) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 4;
+            cell.textContent = "No login events available.";
+            row.appendChild(cell);
+            table.appendChild(row);
+            return;
+        }
+
+        events.forEach(event => {
+            const row = document.createElement("tr");
+
+            addCell(row, event.username);
+            addCell(row, event.result);
+            addCell(row, event.source_ip);
+            addCell(row, event.received_at);
+
+            table.appendChild(row);
+        });
+    }
+
+    function updateAlerts(alerts) {
+        const table = document.getElementById("alerts-table");
+        table.replaceChildren();
+
+        if (!alerts || alerts.length === 0) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 5;
+            cell.textContent = "No security alerts available.";
+            row.appendChild(cell);
+            table.appendChild(row);
+            return;
+        }
+
+        alerts.forEach(alert => {
+            const row = document.createElement("tr");
+
+            addCell(row, alert.alert_type);
+            addCell(row, alert.username);
+
+            const severityCell = document.createElement("td");
+            const severity = String(alert.severity || "").toLowerCase();
+
+            if (["high", "medium", "low"].includes(severity)) {
+                severityCell.classList.add(severity);
+            }
+
+            severityCell.textContent = severity.toUpperCase() || "-";
+            row.appendChild(severityCell);
+
+            addCell(row, alert.failed_attempts);
+            addCell(row, alert.detected_at);
+
+            table.appendChild(row);
+        });
+    }
+
+    function createElement(tag, className, text) {
+        const element = document.createElement(tag);
+
+        if (className) {
+            element.className = className;
+        }
+
+        if (text !== undefined) {
+            element.textContent = text;
+        }
+
+        return element;
+    }
+
+    async function sendIncidentAction(url, payload) {
+        const response = await fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+    "Content-Type": "application/json",
+    "X-CSRFToken": document.querySelector(
+        'meta[name="csrf-token"]'
+    ).getAttribute("content")
+},
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Incident action failed.");
+        }
+
+        return data;
+    }
+
+    function addIncidentRecord(parent, heading, records, fieldName) {
+        const section = createElement("div");
+        const title = createElement("h4", null, heading);
+
+        section.appendChild(title);
+
+        if (!records || records.length === 0) {
+            section.appendChild(
+                createElement("p", "subtitle", "No records available.")
+            );
+        } else {
+            const list = createElement("ul", "record-list");
+
+            records.forEach(record => {
+                const item = createElement(
+                    "li",
+                    null,
+                    `${record.author || "Admin"}: ${record[fieldName]} (${record.timestamp || "-"})`
+                );
+
+                list.appendChild(item);
+            });
+
+            section.appendChild(list);
+        }
+
+        parent.appendChild(section);
+    }
+
+    function renderIncident(incident) {
+        const container = document.getElementById("incidents-container");
+
+        const card = createElement("div", "incident-card");
+
+        const header = createElement("div", "incident-header");
+
+        const title = createElement(
+            "h3",
+            null,
+            `${incident.title} - ${incident.incident_id}`
+        );
+
+        const statusClass = String(incident.status || "")
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+
+        const status = createElement(
+            "span",
+            `status status-${statusClass}`,
+            incident.status
+        );
+
+        header.appendChild(title);
+        header.appendChild(status);
+        card.appendChild(header);
+
+        const severity = String(incident.severity || "").toLowerCase();
+
+        const meta = createElement("div", "incident-meta");
+
+        meta.textContent =
+            `Username: ${incident.username || "-"} | ` +
+            `Severity: ${severity.toUpperCase()} | ` +
+            `Created: ${incident.created_at || "-"} | ` +
+            `Updated: ${incident.updated_at || "-"}`;
+
+        card.appendChild(meta);
+
+        if (incident.source_alert) {
+            const alertInfo = createElement(
+                "p",
+                "incident-meta",
+                `Source alert: ${incident.source_alert.alert_type || "-"} | ` +
+                `Failed attempts: ${incident.source_alert.failed_attempts ?? "-"} | ` +
+                `Source IP: ${incident.source_alert.source_ip || "-"}`
+            );
+
+            card.appendChild(alertInfo);
+        }
+
+        addIncidentRecord(
+            card,
+            "Investigation Notes",
+            incident.investigation_notes,
+            "note"
+        );
+
+        addIncidentRecord(
+            card,
+            "Response Actions",
+            incident.response_actions,
+            "action"
+        );
+
+        if (incident.resolution) {
+            const resolutionBox = createElement("div", "resolution-box");
+
+            resolutionBox.appendChild(
+                createElement("strong", null, "Resolution")
+            );
+
+            resolutionBox.appendChild(
+                createElement(
+                    "p",
+                    null,
+                    incident.resolution.details
+                )
+            );
+
+            resolutionBox.appendChild(
+                createElement(
+                    "small",
+                    null,
+                    `Resolved by ${incident.resolution.author} at ${incident.resolution.resolved_at}`
+                )
+            );
+
+            card.appendChild(resolutionBox);
+        }
+
+        const actions = createElement("div", "incident-actions");
+
+        if (incident.status !== "Resolved") {
+            // Status update
+            actions.appendChild(
+                createElement("h4", null, "Update Incident Status")
+            );
+
+            const statusSelect = createElement("select");
+
+            ["Open", "Investigating"].forEach(value => {
+                const option = createElement("option", null, value);
+                option.value = value;
+
+                if (incident.status === value) {
+                    option.selected = true;
+                }
+
+                statusSelect.appendChild(option);
+            });
+
+            const statusButton = createElement(
+                "button",
+                null,
+                "Update Status"
+            );
+
+            statusButton.addEventListener("click", async () => {
+                statusButton.disabled = true;
+
+                try {
+                    await sendIncidentAction(
+                        `/api/incidents/${encodeURIComponent(incident.incident_id)}/status`,
+                        { status: statusSelect.value }
+                    );
+
+                    await refreshIncidents();
+                } catch (error) {
+                    alert(error.message);
+                } finally {
+                    statusButton.disabled = false;
+                }
+            });
+
+            actions.appendChild(statusSelect);
+            actions.appendChild(statusButton);
+
+            // Investigation note
+            actions.appendChild(
+                createElement("h4", null, "Add Investigation Note")
+            );
+
+            const noteInput = createElement("textarea");
+            noteInput.placeholder = "Enter investigation findings...";
+
+            const noteButton = createElement(
+                "button",
+                null,
+                "Save Note"
+            );
+
+            noteButton.addEventListener("click", async () => {
+                if (!noteInput.value.trim()) {
+                    alert("Please enter an investigation note.");
+                    return;
+                }
+
+                noteButton.disabled = true;
+
+                try {
+                    await sendIncidentAction(
+                        `/api/incidents/${encodeURIComponent(incident.incident_id)}/notes`,
+                        { note: noteInput.value }
+                    );
+
+                    await refreshIncidents();
+                } catch (error) {
+                    alert(error.message);
+                } finally {
+                    noteButton.disabled = false;
+                }
+            });
+
+            actions.appendChild(noteInput);
+            actions.appendChild(noteButton);
+
+            // Response action
+            actions.appendChild(
+                createElement("h4", null, "Record Response Action")
+            );
+
+            const responseInput = createElement("textarea");
+            responseInput.placeholder = "Describe the response action taken...";
+
+            const responseButton = createElement(
+                "button",
+                null,
+                "Record Action"
+            );
+
+            responseButton.addEventListener("click", async () => {
+                if (!responseInput.value.trim()) {
+                    alert("Please enter a response action.");
+                    return;
+                }
+
+                responseButton.disabled = true;
+
+                try {
+                    await sendIncidentAction(
+                        `/api/incidents/${encodeURIComponent(incident.incident_id)}/response`,
+                        { action: responseInput.value }
+                    );
+
+                    await refreshIncidents();
+                } catch (error) {
+                    alert(error.message);
+                } finally {
+                    responseButton.disabled = false;
+                }
+            });
+
+            actions.appendChild(responseInput);
+            actions.appendChild(responseButton);
+
+            // Resolve incident
+            actions.appendChild(
+                createElement("h4", null, "Resolve Incident")
+            );
+
+            const resolutionInput = createElement("textarea");
+            resolutionInput.placeholder = "Explain how the incident was resolved...";
+
+            const resolveButton = createElement(
+                "button",
+                "resolve-button",
+                "Resolve Incident"
+            );
+
+            resolveButton.addEventListener("click", async () => {
+                if (!resolutionInput.value.trim()) {
+                    alert("Please enter resolution details.");
+                    return;
+                }
+
+                if (!confirm("Are you sure you want to resolve this incident?")) {
+                    return;
+                }
+
+                resolveButton.disabled = true;
+
+                try {
+                    await sendIncidentAction(
+                        `/api/incidents/${encodeURIComponent(incident.incident_id)}/resolve`,
+                        { resolution: resolutionInput.value }
+                    );
+
+                    await refreshIncidents();
+                } catch (error) {
+                    alert(error.message);
+                } finally {
+                    resolveButton.disabled = false;
+                }
+            });
+
+            actions.appendChild(resolutionInput);
+            actions.appendChild(resolveButton);
+
+        } else {
+            actions.appendChild(
+                createElement(
+                    "p",
+                    "subtitle",
+                    "This incident is resolved. Further modifications are disabled."
+                )
+            );
+        }
+
+        card.appendChild(actions);
+        container.appendChild(card);
+    }
+
+    async function refreshIncidents() {
+        const status = document.getElementById("incident-status");
+        const container = document.getElementById("incidents-container");
+
+        try {
+            const response = await fetch("/api/incidents", {
+                method: "GET",
+                credentials: "same-origin"
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                status.textContent = "Incident access expired. Please log in again.";
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error("Unable to load incidents.");
+            }
+
+            const data = await response.json();
+
+            container.replaceChildren();
+
+            if (!data.incidents || data.incidents.length === 0) {
+                status.textContent = "No security incidents available.";
+                return;
+            }
+
+            status.textContent = `Total incidents: ${data.incidents.length}`;
+
+            data.incidents
+                .slice()
+                .reverse()
+                .forEach(renderIncident);
+
+        } catch (error) {
+            status.textContent = "Unable to load incidents. Retrying...";
+            console.error(error);
+        }
+    }
+
+    async function refreshDashboard() {
+        const status = document.getElementById("update-status");
+
+        try {
+            const response = await fetch("/api/dashboard-data", {
+                method: "GET",
+                credentials: "same-origin"
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                status.textContent = "Dashboard access expired. Please log in again.";
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error("Dashboard API request failed");
+            }
+
+            const data = await response.json();
+
+            document.getElementById("total-events").textContent = data.total_events;
+            document.getElementById("total-alerts").textContent = data.total_alerts;
+            document.getElementById("high-alerts").textContent = data.high_alerts;
+            document.getElementById("medium-alerts").textContent = data.medium_alerts;
+            document.getElementById("low-alerts").textContent = data.low_alerts;
+
+            updateEvents(data.recent_events);
+            updateAlerts(data.recent_alerts);
+
+            status.textContent = "Live monitoring active | Last updated: " +
+                new Date().toLocaleTimeString();
+
+        } catch (error) {
+            status.textContent = "Unable to refresh dashboard. Retrying...";
+            console.error(error);
+        }
+    }
+
+    refreshDashboard();
+    refreshIncidents();
+
+    setInterval(refreshDashboard, 5000);
+    setInterval(refreshIncidents, 10000);
+</script>
+
+</body>
+</html>
+
